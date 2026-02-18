@@ -18,7 +18,6 @@
     --shadow:rgba(0,0,0,.55);
     --radius:14px;
   }
-
   html,body{height:100%;margin:0;}
   body{
     color:var(--ink);
@@ -33,7 +32,6 @@
     flex-direction:column;
     overflow:hidden;
   }
-
   html.fs, html.fs body{ overflow:hidden !important; }
 
   .wrap{
@@ -160,7 +158,6 @@
     box-shadow: 0 0 0 1px rgba(0,0,0,.25) inset;
     user-select:none;
   }
-
   .ghost{opacity:.28;filter:saturate(.9);}
   .active{outline:1px solid rgba(124,255,178,.28);box-shadow: 0 0 0 2px rgba(124,255,178,.08) inset;}
   .match{outline:1px solid rgba(255,211,124,.45);box-shadow: 0 0 0 2px rgba(255,211,124,.10) inset;}
@@ -232,13 +229,6 @@
   .overlay .box p{margin:0 0 12px;color:var(--muted);font-size:12px;line-height:1.4;}
   .overlay .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
 
-  .pulse{animation:pulse 420ms ease-out 1;}
-  @keyframes pulse{
-    0%{transform:scale(1);filter:brightness(1);}
-    40%{transform:scale(1.01);filter:brightness(1.12);}
-    100%{transform:scale(1);filter:brightness(1);}
-  }
-
   .desktop-only{
     position:absolute;
     inset:0;
@@ -252,7 +242,7 @@
     backdrop-filter: blur(4px);
   }
   .desktop-only .box{
-    max-width:520px;
+    max-width:560px;
     background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(0,0,0,.18)), var(--paper);
     border:1px solid rgba(255,255,255,.10);
     border-radius:14px;
@@ -262,9 +252,6 @@
   .desktop-only h3{margin:0 0 8px;font-size:14px;text-transform:lowercase;}
   .desktop-only p{margin:0 0 10px;color:var(--muted);font-size:12px;line-height:1.45;}
   .desktop-only .tiny{opacity:.9;font-size:12px;}
-  @media (max-width: 820px){
-    .desktop-only{display:flex;}
-  }
 </style>
 </head>
 <body>
@@ -283,6 +270,9 @@
           <h3>desktop only</h3>
           <p>this grove simulation is currently calibrated for keyboards and wide screens.</p>
           <p class="tiny">open on a desktop/laptop browser to play.</p>
+          <div class="row" style="margin-top:10px;">
+            <button class="btn" id="playAnywayBtn">play anyway</button>
+          </div>
         </div>
       </div>
 
@@ -301,7 +291,7 @@
           <div class="overlay show" id="startOverlay" role="dialog" aria-modal="true" aria-hidden="false">
             <div class="box">
               <h3>enter the grove</h3>
-              <p>tap start. if permitted, the training sim will expand to fullscreen. esc exits.</p>
+              <p>click start. if permitted, the training sim will expand to fullscreen. esc exits.</p>
               <div class="row">
                 <button class="btn accent" id="startBtn">start</button>
                 <button class="btn" id="startFsBtn">start + fullscreen</button>
@@ -389,6 +379,7 @@
   const startFsBtn = document.getElementById("startFsBtn");
 
   const desktopOnly = document.getElementById("desktopOnly");
+  const playAnywayBtn = document.getElementById("playAnywayBtn");
 
   let grid = emptyGrid();
   let cells = [];
@@ -403,13 +394,17 @@
   let paused = false;
   let gameOver = false;
   let started = false;
+  let forcePlay = false;
 
   let current = null;
   let next = spawnPiece();
   let ritualMatches = new Set();
 
-  function isMobile(){
-    return window.matchMedia("(max-width: 820px)").matches;
+  function isTouchFirst(){
+    const coarse = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+    const noHover = window.matchMedia && window.matchMedia("(hover: none)").matches;
+    const touchPts = (navigator.maxTouchPoints || 0) > 0;
+    return (coarse && noHover) || (coarse && touchPts);
   }
 
   function emptyGrid(){
@@ -698,8 +693,19 @@
     if(doFullscreen) requestFS();
   }
 
+  function updateGate(){
+    const blocked = isTouchFirst() && !forcePlay;
+    desktopOnly.style.display = blocked ? "flex" : "none";
+    if(blocked){
+      statusText.textContent = "desktop only";
+    }else{
+      statusText.textContent = started ? (paused ? "paused" : "running") : "idle";
+    }
+  }
+
   window.addEventListener("keydown", (e) => {
-    if(isMobile()) return;
+    if(desktopOnly.style.display === "flex") return;
+
     const k = e.key;
 
     if(!started){
@@ -724,24 +730,18 @@
   restartBtn.addEventListener("click", () => { if(!started) startGame(false); restart(); });
   fsBtn.addEventListener("click", () => requestFS());
 
-  startBtn.addEventListener("click", () => { if(isMobile()) return; startGame(false); });
-  startFsBtn.addEventListener("click", () => { if(isMobile()) return; startGame(true); });
+  startBtn.addEventListener("click", () => { if(desktopOnly.style.display === "flex") return; startGame(false); });
+  startFsBtn.addEventListener("click", () => { if(desktopOnly.style.display === "flex") return; startGame(true); });
+
+  playAnywayBtn.addEventListener("click", () => {
+    forcePlay = true;
+    updateGate();
+  });
 
   document.addEventListener("fullscreenchange", () => {
     document.documentElement.classList.toggle("fs", !!document.fullscreenElement);
     updateHUD();
   });
-
-  function enforceDesktopGate(){
-    const mobile = isMobile();
-    desktopOnly.style.display = mobile ? "flex" : "none";
-    if(mobile){
-      statusText.textContent = "desktop only";
-      startOverlay.classList.add("show");
-    }else{
-      statusText.textContent = started ? (paused ? "paused" : "running") : "idle";
-    }
-  }
 
   buildBoard();
   current = spawnPiece();
@@ -750,8 +750,8 @@
   for(let i=0;i<10 && collides(current);i++) current = spawnPiece();
   ritualMatches = findMatchesN(MATCH_N);
   updateHUD();
-  enforceDesktopGate();
-  window.addEventListener("resize", enforceDesktopGate);
+  updateGate();
+  window.addEventListener("resize", updateGate);
   requestAnimationFrame(tick);
 })();
 </script>
