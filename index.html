@@ -19,27 +19,22 @@
     --radius:14px;
   }
   html,body{height:100%;margin:0;}
- body{
-  color:var(--ink);
-  background:
-    radial-gradient(1200px 800px at 10% 0%, rgba(124,255,178,.08), transparent 55%),
-    radial-gradient(900px 600px at 90% 10%, rgba(255,211,124,.06), transparent 55%),
-    radial-gradient(1200px 900px at 50% 120%, rgba(124,156,255,.05), transparent 60%),
-    var(--bg);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  letter-spacing:.2px;
-  display:flex;
-  flex-direction:column;
-  overflow:hidden;
-}
+  body{
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 800px at 10% 0%, rgba(124,255,178,.08), transparent 55%),
+      radial-gradient(900px 600px at 90% 10%, rgba(255,211,124,.06), transparent 55%),
+      radial-gradient(1200px 900px at 50% 120%, rgba(124,156,255,.05), transparent 60%),
+      var(--bg);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    letter-spacing:.2px;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
 
-/* mobile: allow scroll so controls can be reached */
-@media (max-width: 820px){
-  body{ overflow:auto; }
-  .wrap{ height:auto; }
-  .panel{ height:auto; }
-  .grid-area{ min-height:0; }
-}
+  html.fs, html.fs body{ overflow:hidden !important; }
+
   .wrap{
     flex:1;
     display:flex;
@@ -48,10 +43,13 @@
     max-width:none;
     padding:16px 14px 18px;
     box-sizing:border-box;
+    min-height:0;
   }
+
   .title{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:8px 0 12px;}
   .title h1{font-size:18px;line-height:1.1;margin:0;font-weight:800;text-transform:lowercase;}
   .title .sub{font-size:12px;color:var(--muted);margin-top:6px;max-width:72ch;}
+
   .panel{
     flex:1;
     display:flex;
@@ -62,6 +60,7 @@
     box-shadow: 0 12px 30px var(--shadow), 0 0 0 1px rgba(0,0,0,.35) inset;
     overflow:hidden;
     position:relative;
+    min-height:0;
   }
   .panel::before{
     content:"";
@@ -78,6 +77,7 @@
     opacity:.08;
     mix-blend-mode:overlay;
   }
+
   .grid-area{
     flex:1;
     display:grid;
@@ -88,7 +88,6 @@
     z-index:1;
     min-height:0;
   }
-  @media (max-width: 820px){ .grid-area{grid-template-columns:1fr;} }
 
   .badge{
     display:inline-flex;
@@ -123,6 +122,7 @@
     margin-bottom:10px;
     flex-wrap:wrap;
   }
+
   .board{
     flex:1;
     display:grid;
@@ -163,6 +163,7 @@
   .match{outline:1px solid rgba(255,211,124,.45);box-shadow: 0 0 0 2px rgba(255,211,124,.10) inset;}
 
   .side{display:flex;flex-direction:column;gap:12px;min-height:0;}
+
   .card{
     background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(0,0,0,.10)), var(--paper);
     border:1px solid var(--line);
@@ -173,6 +174,7 @@
   .kv{display:grid;grid-template-columns: 1fr auto;gap:8px 10px;align-items:center;font-size:13px;}
   .kv .k{color:var(--muted);}
   .kv .v{font-weight:900;}
+
   .next{
     display:flex;
     align-items:center;
@@ -184,6 +186,7 @@
     margin-top:10px;
   }
   .next .piece{font-size:26px;letter-spacing:2px;}
+
   .log{margin-top:10px;font-size:12px;color:var(--muted);line-height:1.35;}
 
   .controls{display:grid;grid-template-columns: repeat(3, 1fr);gap:8px;margin-top:10px;}
@@ -235,19 +238,58 @@
     40%{transform:scale(1.01);filter:brightness(1.12);}
     100%{transform:scale(1);filter:brightness(1);}
   }
-  .mobile-only{ display:none; }
-@media (max-width: 820px){
-  .mobile-only{ display:inline-flex; }
-}
 
-.next-actions{
-  display:flex;
-  gap:8px;
-  align-items:center;
-  justify-content:flex-end;
-  margin-top:10px;
-}
-  
+  .mobile-only{ display:none; }
+  @media (max-width: 820px){ .mobile-only{ display:inline-flex; } }
+
+  .next-actions{
+    display:flex;
+    gap:8px;
+    align-items:center;
+    justify-content:flex-end;
+    margin-top:10px;
+  }
+
+  .sticky-mobile{ position:static; }
+  @media (max-width: 820px){
+    .sticky-mobile{
+      position:sticky;
+      top:10px;
+      z-index:10;
+      backdrop-filter: blur(6px);
+    }
+  }
+
+  @media (max-width: 820px){
+    body{ overflow:hidden; }
+
+    .wrap{
+      height:100dvh;
+      overflow-y:auto;
+      -webkit-overflow-scrolling:touch;
+      padding-bottom:24px;
+    }
+
+    .panel{
+      flex:0;
+      overflow:visible;
+    }
+
+    .grid-area{
+      display:flex;
+      flex-direction:column;
+      min-height:auto;
+    }
+
+    .board{
+      flex:0;
+      aspect-ratio: 8 / 10;
+      height:auto;
+      max-height:62dvh;
+    }
+
+    .side{ flex:0; }
+  }
 </style>
 </head>
 <body>
@@ -299,15 +341,15 @@
         </div>
 
         <aside class="side">
-          <div class="card">
+          <div class="card sticky-mobile">
             <h2>next specimen</h2>
             <div class="next">
               <div class="badge">incoming</div>
               <div class="piece" id="nextPiece">🍄</div>
             </div>
             <div class="next-actions mobile-only">
-  <button class="btn small accent" id="btnRitualTop">ritual</button>
-</div>
+              <button class="btn small accent" id="btnRitualTop">ritual</button>
+            </div>
             <div class="log">
               <div>align 4 of a kind (🍄 🌳 🌲 🦌).</div>
               <div>the grove does not self-clean.</div>
@@ -712,6 +754,7 @@
   }, {passive:false});
 
   const bindPress = (el, fn) => {
+    if(!el) return;
     el.addEventListener("pointerdown", (e) => { e.preventDefault(); fn(); }, {passive:false});
   };
 
@@ -720,7 +763,7 @@
   bindPress(btnDown, () => softDrop());
   bindPress(btnRotate, () => rotatePiece());
   bindPress(btnRitual, () => ritual());
-  if (btnRitualTop) bindPress(btnRitualTop, () => ritual());
+  bindPress(btnRitualTop, () => ritual());
   bindPress(btnPause, () => { if(!started) return; setPaused(!paused); });
 
   resumeBtn.addEventListener("click", () => setPaused(false));
@@ -769,7 +812,10 @@
     if(document.hidden && started && !paused && !gameOver) setPaused(true);
   });
 
-  document.addEventListener("fullscreenchange", () => updateHUD());
+  document.addEventListener("fullscreenchange", () => {
+    document.documentElement.classList.toggle("fs", !!document.fullscreenElement);
+    updateHUD();
+  });
 
   buildBoard();
   current = spawnPiece();
